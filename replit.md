@@ -1,6 +1,6 @@
-# [Project name]
+# BUG HUNT
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A playable pixel-art cyber debugging arcade game where hunters inspect buggy Python snippets, choose fixes, and capture bugs across three difficulty levels.
 
 ## Run & Operate
 
@@ -22,23 +22,31 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/bug-hunt/src/App.tsx` — game screens, question bank, scoring, timer, keyboard controls, and Code Hunter states
+- `artifacts/bug-hunt/src/index.css` — visual system, pixel/cyberpunk atmosphere, responsive layout, particles, and character styling
+- `artifacts/bug-hunt` — root-preview React/Vite web artifact
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The game is intentionally frontend-only; question content and scoring stay local so the core loop works without a service dependency.
+- The question bank is grouped by difficulty with exactly ten cases per level.
+- The Code Hunter is built from CSS pixel-art layers so the same character can show state labels and animate across every game screen.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Home and briefing screens introduce the hunt and protagonist.
+- Easy / Bug Spotter, Mid / Bug Tracker, and Hard / Bug Boss each contain ten Python debugging cases.
+- Mid and Hard use live timers; answers support mouse/touch and A-D keyboard shortcuts.
+- Scoring includes base points, streaks, and fast-answer bonuses, followed by level-complete and final hunt-log screens.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Preserve the existing game structure and working logic while making only the requested mascot, level-count, and cyberpunk visual improvements.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The app uses the artifact-managed workflow so `PORT` and `BASE_PATH` are provided at runtime.
+- This artifact has no API or database requirement.
 
 ## Pointers
 

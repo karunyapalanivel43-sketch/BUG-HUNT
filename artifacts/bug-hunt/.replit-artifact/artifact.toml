@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "BUG HUNT"
+description = "A playable pixel-art cyber debugging arcade game where players inspect buggy Python code, choose fixes, and capture bugs across Easy, Mid, and Hard levels."
+version = "1.0.0"
+id = "artifacts/bug-hunt"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24751
+
+[services.development]
+run = "pnpm --filter @workspace/bug-hunt run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bug-hunt", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bug-hunt/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24751"
+BASE_PATH = "/"

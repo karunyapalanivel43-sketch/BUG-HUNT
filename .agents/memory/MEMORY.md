@@ -1,0 +1,1 @@
+- [BUG HUNT source recovery](bug-hunt-source-recovery.md) — when the original export is unavailable, use the deployed game bundle and behavior as the preservation reference.

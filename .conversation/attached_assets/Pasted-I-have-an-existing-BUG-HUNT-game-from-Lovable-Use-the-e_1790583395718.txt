@@ -1,0 +1,75 @@
+I have an existing BUG HUNT game from Lovable. 
+Use the existing project as the base.
+
+IMPORTANT:
+Do NOT rebuild the game from scratch.
+Do NOT remove or replace existing working features.
+Keep the existing levels, questions, scoring, navigation, animations and game logic unless I specifically ask you to change them.
+
+I want to make several visual and gameplay improvements while preserving the existing game.
+
+FIRST CHANGE — MASCOT:
+
+Replace the current mascot with a mature-looking 18-year-old adult male anime-inspired pixel-art Code Hunter.
+
+Character appearance:
+- black oversized hoodie
+- black half-mask covering the lower face
+- dark messy hair
+- sharp but approachable eyes
+- dark cargo-style pants
+- black sneakers
+- small cyber/tech backpack
+- subtle cyan technology accents
+- small glowing cyan scanner/device
+- calm, intelligent, focused personality
+- slightly mysterious and confident
+- not childish
+- not villainous
+
+Use a Japanese RPG-inspired pixel-art style.
+
+The character must be clearly visible and animated on the FRONT/HOME SCREEN, because he is the main protagonist of BUG HUNT.
+
+Also use the same character during gameplay with different states such as:
+- idle
+- thinking
+- inspecting
+- correct answer
+- wrong answer
+- timer warning
+- level complete
+- final result
+
+SECOND CHANGE — LEVELS:
+
+Keep the existing Easy / Mid / Hard system.
+
+Make sure there are exactly:
+
+Easy / Bug Spotter = 10 questions
+Mid / Bug Tracker = 10 questions
+Hard / Bug Boss = 10 questions
+
+TOTAL = 30 questions.
+
+Do NOT replace the existing question system if it already works.
+Only correct it if necessary.
+
+THIRD CHANGE — GAME FEEL:
+
+Keep the existing game structure but make the interface feel more like a Japanese-inspired cyberpunk pixel debugging game.
+
+Use:
+- dark navy/black background
+- neon cyan accents
+- pixel-art styling
+- coding-lab atmosphere
+- subtle animated particles
+- small animated bugs
+- futuristic terminal/code elements
+
+Do not turn the interface into a generic dashboard.
+
+For now, make ONLY these changes.
+After making them, run the project and check that the existing game still works correctly.
