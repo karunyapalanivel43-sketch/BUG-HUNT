@@ -35,9 +35,9 @@ A playable pixel-art cyber debugging arcade game where hunters inspect buggy Pyt
 ## Product
 
 - Home and briefing screens introduce the hunt and protagonist.
-- Easy / Bug Spotter, Mid / Bug Tracker, and Hard / Bug Boss each contain ten Python debugging cases.
+- Easy / Bug Spotter and Mid / Bug Tracker retain their 10-question multiple-choice flow with 10/20 base points; Hard / Bug Boss contains ten code-writing cases with three safe browser-side validation traces and 50 points per solved case.
 - Mid and Hard use live timers; answers support mouse/touch and A-D keyboard shortcuts.
-- Scoring includes base points, streaks, and fast-answer bonuses, followed by level-complete and final hunt-log screens.
+- Scoring includes the requested 800-point base total, streaks, and fast-answer bonuses, followed by locked-forward level completion and the final hunter report.
 
 ## User preferences
 

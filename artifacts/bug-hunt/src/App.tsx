@@ -2,9 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  Check,
+  CircleAlert,
+  Code2,
   Crosshair,
   Keyboard,
+  Play,
   RotateCcw,
+  Send,
   Terminal,
   Timer,
   Trophy,
@@ -26,6 +31,17 @@ type Question = {
   explanation: string;
   points: number;
 };
+type HardTestCase = { input: string; expected: string };
+type HardChallenge = {
+  id: number;
+  title: string;
+  problem: string;
+  buggyCode: string;
+  starterCode: string;
+  tests: [HardTestCase, HardTestCase, HardTestCase];
+  validate: (code: string) => boolean[];
+};
+type TestResult = { passed: boolean };
 
 const question = (
   id: number,
@@ -40,28 +56,28 @@ const question = (
 
 const QUESTIONS: Record<LevelId, Question[]> = {
   easy: [
-    question(1, `name = "Ada"\nprint("Hello, " + name)`, 2, 'What is wrong with this snippet?', ['The variable is not declared', 'Nothing — it runs correctly', 'print needs square brackets', 'Strings cannot be joined'], 1, 'Both strings are valid and the concatenation is legal Python.', 100),
-    question(2, `score = 78\nif score > 60\n    print("pass")`, 1, 'Which fix makes this condition valid?', ['Add a colon after 60', 'Indent the if line', 'Use one equals sign', 'Wrap score in quotes'], 0, 'Python blocks begin with a colon after the condition.', 100),
-    question(3, `items = ["map", "key", "lamp"]\nprint(items[3])`, 1, 'Why does the highlighted line fail?', ['Lists start at index 1', 'The list is immutable', 'Index 3 is out of range', 'print cannot show lists'], 2, 'The last valid index is 2 because Python starts counting at zero.', 100),
-    question(4, `for item in ["red", "blue"]\n    print(item)`, 1, 'Which character is missing?', ['A comma', 'A colon', 'A semicolon', 'A closing bracket'], 1, 'A for statement needs a colon before its indented body.', 100),
-    question(5, `def greet(name):\nprint("Hi " + name)\ngreet("Mina")`, 1, 'What is the bug in this function?', ['name should be a number', 'The call is inside the function', 'The body needs indentation', 'def must be uppercase'], 2, 'The print statement belongs to the function body and must be indented.', 100),
-    question(6, `numbers = [2, 4, 6]\nfor n in numbers:\n  total = n`, 2, 'Why is total not a running total?', ['n is not a number', 'total is replaced each loop', 'for cannot use lists', 'total needs quotes'], 1, 'Assigning total each time overwrites the previous value; start at zero and add.', 100),
-    question(7, `is_open = True\nif is_open = True:\n    print("scan")`, 1, 'Which operator belongs in the if check?', ['+=', '==', '=>', '!='], 1, 'A single equals assigns. Double equals compares two values.', 100),
-    question(8, `target = "bug"\nprint(target.upper)`, 1, 'What should change to call the string method?', ['Use target.upper()', 'Use target.UPPER', 'Remove target', 'Add a colon'], 0, 'upper is a method, so parentheses invoke it.', 100),
-    question(9, `count = 0\nwhile count < 3:\n    print(count)`, 2, 'What will happen when this runs?', ['It prints 0, 1, 2', 'It prints 1, 2, 3', 'It loops forever', 'It cannot print integers'], 2, 'count never changes, so the condition remains true forever.', 100),
-    question(10, `def add(a, b):\n    return a + b\nresult = add(4)`, 3, 'How should the function call be fixed?', ['add(4, 0)', 'add(4, 4)', 'add(a=4)', 'Remove return'], 0, 'The function requires two arguments; supplying a default value completes the call.', 100),
+    question(1, `name = "Ada"\nprint("Hello, " + name)`, 2, 'What is wrong with this snippet?', ['The variable is not declared', 'Nothing — it runs correctly', 'print needs square brackets', 'Strings cannot be joined'], 1, 'Both strings are valid and the concatenation is legal Python.', 10),
+    question(2, `score = 78\nif score > 60\n    print("pass")`, 1, 'Which fix makes this condition valid?', ['Add a colon after 60', 'Indent the if line', 'Use one equals sign', 'Wrap score in quotes'], 0, 'Python blocks begin with a colon after the condition.', 10),
+    question(3, `items = ["map", "key", "lamp"]\nprint(items[3])`, 1, 'Why does the highlighted line fail?', ['Lists start at index 1', 'The list is immutable', 'Index 3 is out of range', 'print cannot show lists'], 2, 'The last valid index is 2 because Python starts counting at zero.', 10),
+    question(4, `for item in ["red", "blue"]\n    print(item)`, 1, 'Which character is missing?', ['A comma', 'A colon', 'A semicolon', 'A closing bracket'], 1, 'A for statement needs a colon before its indented body.', 10),
+    question(5, `def greet(name):\nprint("Hi " + name)\ngreet("Mina")`, 1, 'What is the bug in this function?', ['name should be a number', 'The call is inside the function', 'The body needs indentation', 'def must be uppercase'], 2, 'The print statement belongs to the function body and must be indented.', 10),
+    question(6, `numbers = [2, 4, 6]\nfor n in numbers:\n  total = n`, 2, 'Why is total not a running total?', ['n is not a number', 'total is replaced each loop', 'for cannot use lists', 'total needs quotes'], 1, 'Assigning total each time overwrites the previous value; start at zero and add.', 10),
+    question(7, `is_open = True\nif is_open = True:\n    print("scan")`, 1, 'Which operator belongs in the if check?', ['+=', '==', '=>', '!='], 1, 'A single equals assigns. Double equals compares two values.', 10),
+    question(8, `target = "bug"\nprint(target.upper)`, 1, 'What should change to call the string method?', ['Use target.upper()', 'Use target.UPPER', 'Remove target', 'Add a colon'], 0, 'upper is a method, so parentheses invoke it.', 10),
+    question(9, `count = 0\nwhile count < 3:\n    print(count)`, 2, 'What will happen when this runs?', ['It prints 0, 1, 2', 'It prints 1, 2, 3', 'It loops forever', 'It cannot print integers'], 2, 'count never changes, so the condition remains true forever.', 10),
+    question(10, `def add(a, b):\n    return a + b\nresult = add(4)`, 3, 'How should the function call be fixed?', ['add(4, 0)', 'add(4, 4)', 'add(a=4)', 'Remove return'], 0, 'The function requires two arguments; supplying a default value completes the call.', 10),
   ],
   mid: [
-    question(11, `temperature = 18\nif temperature > 20:\n    mood = "warm"\nelse\n    mood = "cool"`, 4, 'Which syntax fix is needed?', ['Colon after else', 'Colon after mood', 'else needs parentheses', 'Use elif instead'], 0, 'else introduces a block and must end with a colon.', 125),
-    question(12, `def first(items):\n    return items[1]\nprint(first(["a", "b", "c"]))`, 1, 'The hunter wants the first item. What should the return line use?', ['items[0]', 'items[1]', 'items.first()', 'items[-0]'], 0, 'Index zero is the first position in a Python list.', 125),
-    question(13, `for i in range(1, 4):\n    print(i)\n# expected: 0, 1, 2`, 1, 'Which range produces the expected output?', ['range(1, 4)', 'range(0, 3)', 'range(0, 2)', 'range(1, 3)'], 1, 'The stop value is exclusive, so range(0, 3) gives 0, 1, 2.', 125),
-    question(14, `user = {"name": "Kiro"}\nprint(user["role"])`, 1, 'What kind of issue can this line raise?', ['TypeError', 'KeyError', 'IndexError', 'NameError'], 1, 'The dictionary has no role key, so looking it up raises KeyError.', 125),
-    question(15, `def is_even(value):\n    if value % 2 = 0:\n        return True\n    return False`, 2, 'Find the invalid operator.', ['%', '=', '==', 'return'], 1, 'Use == to compare the remainder with zero; = is assignment.', 125),
-    question(16, `items = ["a", "b", "c"]\nfor index in range(len(items)):\n    print(items[index + 1])`, 3, 'How can the loop avoid its final out-of-range access?', ['Use index - 1', 'Use range(len(items) - 1)', 'Use len(items) + 1', 'Use items[index] twice'], 1, 'The current range includes the last index, so stopping one step earlier avoids index + 1 overflow.', 125),
-    question(17, `active = False\nif not active:\n    print("offline")\nelse:\n    print("online")`, 1, 'What does this program print?', ['offline', 'online', 'True', 'Nothing'], 0, 'not False evaluates to True, so the first branch runs.', 125),
-    question(18, `logs = ["ok", "warn"]\nlogs.append["error"]`, 1, 'How should error be appended?', ['logs.append("error")', 'logs.add("error")', 'append.logs("error")', 'logs += ("error")'], 0, 'append is a list method and needs parentheses when called.', 125),
-    question(19, `value = 5\nif value > 3:\nprint("large")`, 2, 'What indentation repair is required?', ['Indent print one level', 'Indent the if line', 'Indent value', 'No repair'], 0, 'Statements inside a conditional block must be indented.', 125),
-    question(20, `try:\n    result = 10 / 0\nexcept ValueError:\n    result = 0`, 3, 'Which exception should be caught?', ['ValueError', 'ZeroDivisionError', 'IndexError', 'SyntaxError'], 1, 'Division by zero raises ZeroDivisionError, not ValueError.', 125),
+    question(11, `temperature = 18\nif temperature > 20:\n    mood = "warm"\nelse\n    mood = "cool"`, 4, 'Which syntax fix is needed?', ['Colon after else', 'Colon after mood', 'else needs parentheses', 'Use elif instead'], 0, 'else introduces a block and must end with a colon.', 20),
+    question(12, `def first(items):\n    return items[1]\nprint(first(["a", "b", "c"]))`, 1, 'The hunter wants the first item. What should the return line use?', ['items[0]', 'items[1]', 'items.first()', 'items[-0]'], 0, 'Index zero is the first position in a Python list.', 20),
+    question(13, `for i in range(1, 4):\n    print(i)\n# expected: 0, 1, 2`, 1, 'Which range produces the expected output?', ['range(1, 4)', 'range(0, 3)', 'range(0, 2)', 'range(1, 3)'], 1, 'The stop value is exclusive, so range(0, 3) gives 0, 1, 2.', 20),
+    question(14, `user = {"name": "Kiro"}\nprint(user["role"])`, 1, 'What kind of issue can this line raise?', ['TypeError', 'KeyError', 'IndexError', 'NameError'], 1, 'The dictionary has no role key, so looking it up raises KeyError.', 20),
+    question(15, `def is_even(value):\n    if value % 2 = 0:\n        return True\n    return False`, 2, 'Find the invalid operator.', ['%', '=', '==', 'return'], 1, 'Use == to compare the remainder with zero; = is assignment.', 20),
+    question(16, `items = ["a", "b", "c"]\nfor index in range(len(items)):\n    print(items[index + 1])`, 3, 'How can the loop avoid its final out-of-range access?', ['Use index - 1', 'Use range(len(items) - 1)', 'Use len(items) + 1', 'Use items[index] twice'], 1, 'The current range includes the last index, so stopping one step earlier avoids index + 1 overflow.', 20),
+    question(17, `active = False\nif not active:\n    print("offline")\nelse:\n    print("online")`, 1, 'What does this program print?', ['offline', 'online', 'True', 'Nothing'], 0, 'not False evaluates to True, so the first branch runs.', 20),
+    question(18, `logs = ["ok", "warn"]\nlogs.append["error"]`, 1, 'How should error be appended?', ['logs.append("error")', 'logs.add("error")', 'append.logs("error")', 'logs += ("error")'], 0, 'append is a list method and needs parentheses when called.', 20),
+    question(19, `value = 5\nif value > 3:\nprint("large")`, 2, 'What indentation repair is required?', ['Indent print one level', 'Indent the if line', 'Indent value', 'No repair'], 0, 'Statements inside a conditional block must be indented.', 20),
+    question(20, `try:\n    result = 10 / 0\nexcept ValueError:\n    result = 0`, 3, 'Which exception should be caught?', ['ValueError', 'ZeroDivisionError', 'IndexError', 'SyntaxError'], 1, 'Division by zero raises ZeroDivisionError, not ValueError.', 20),
   ],
   hard: [
     question(21, `def find_bug(items, target):\n    for item in items:\n        if item == target:\n            return True\n    return False`, 3, 'What is the control flow doing correctly?', ['Returning on the first match', 'Skipping every match', 'Comparing indexes to text', 'Returning before the loop'], 0, 'The early return is safe here: it exits only when a matching item is found.', 150),
@@ -77,10 +93,229 @@ const QUESTIONS: Record<LevelId, Question[]> = {
   ],
 };
 
-const LEVELS: { id: LevelId; name: string; title: string; description: string; time: string; color: string }[] = [
-  { id: 'easy', name: 'EASY', title: 'Bug Spotter', description: 'Learn the telltale signs. Take your time and build your streak.', time: 'NO TIMER', color: 'lime' },
-  { id: 'mid', name: 'MID', title: 'Bug Tracker', description: 'The clock is live. Read fast, think clean, commit with confidence.', time: '45 SEC / Q', color: 'cyan' },
-  { id: 'hard', name: 'HARD', title: 'Bug Boss', description: 'Deep logic, subtle traps, zero room for a lazy assumption.', time: '30 SEC / Q', color: 'coral' },
+const HARD_CHALLENGES: HardChallenge[] = [
+  {
+    id: 21,
+    title: 'Repair the parity detector',
+    problem: 'Return True only when the incoming number is even. Keep the function usable for positive, negative, and zero values.',
+    buggyCode: `def is_even(n):
+    if n % 2 = 0:
+        return True
+    return False`,
+    starterCode: `def is_even(n):
+    if n % 2 = 0:
+        return True
+    return False`,
+    tests: [
+      { input: '2', expected: 'True' },
+      { input: '7', expected: 'False' },
+      { input: '0', expected: 'True' },
+    ],
+    validate: (code) => {
+      const fixed = /n\s*%\s*2\s*==\s*0/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 22,
+    title: 'Find the first signal',
+    problem: 'Return the first item in a list. The function must work with short lists without shifting the result by one position.',
+    buggyCode: `def first_item(items):
+    return items[1]`,
+    starterCode: `def first_item(items):
+    return items[1]`,
+    tests: [
+      { input: '["cyan", "navy"]', expected: 'cyan' },
+      { input: '["bug", "fix", "ship"]', expected: 'bug' },
+      { input: '["only"]', expected: 'only' },
+    ],
+    validate: (code) => {
+      const fixed = /items\s*\[\s*0\s*\]/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 23,
+    title: 'Stop the index overflow',
+    problem: 'Print every item exactly once. The current loop reaches beyond the final list index.',
+    buggyCode: `def print_items(items):
+    for index in range(len(items)):
+        print(items[index + 1])`,
+    starterCode: `def print_items(items):
+    for index in range(len(items)):
+        print(items[index + 1])`,
+    tests: [
+      { input: '["A", "B", "C"]', expected: 'A B C' },
+      { input: '["scan", "trace"]', expected: 'scan trace' },
+      { input: '["solo"]', expected: 'solo' },
+    ],
+    validate: (code) => {
+      const fixed = /range\s*\(\s*len\s*\(\s*items\s*\)\s*\)/.test(code) && /items\s*\[\s*index\s*\]/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 24,
+    title: 'Keep the running total',
+    problem: 'Return the sum of every value. The accumulator must retain the values collected from earlier loop iterations.',
+    buggyCode: `def total(values):
+    total = 0
+    for value in values:
+        total = value
+    return total`,
+    starterCode: `def total(values):
+    total = 0
+    for value in values:
+        total = value
+    return total`,
+    tests: [
+      { input: '[2, 4, 6]', expected: '12' },
+      { input: '[10, -3]', expected: '7' },
+      { input: '[]', expected: '0' },
+    ],
+    validate: (code) => {
+      const fixed = /total\s*\+=\s*value/.test(code) || /total\s*=\s*total\s*\+\s*value/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 25,
+    title: 'Count the vowels',
+    problem: 'Count the vowels in a word without skipping repeated characters. The result should be zero for a word with no vowels.',
+    buggyCode: `def count_vowels(text):
+    count = 0
+    for char in text.lower():
+        if char in "aeiou":
+            count =+ 1
+    return count`,
+    starterCode: `def count_vowels(text):
+    count = 0
+    for char in text.lower():
+        if char in "aeiou":
+            count =+ 1
+    return count`,
+    tests: [
+      { input: '"Pixel"', expected: '2' },
+      { input: '"queue"', expected: '4' },
+      { input: '"rhythm"', expected: '0' },
+    ],
+    validate: (code) => {
+      const fixed = /count\s*\+=\s*1/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 26,
+    title: 'Give missing config a default',
+    problem: 'Read the timeout setting, but use zero when the configuration does not contain that key.',
+    buggyCode: `def timeout_for(config):
+    return config["timeout"]`,
+    starterCode: `def timeout_for(config):
+    return config["timeout"]`,
+    tests: [
+      { input: '{"timeout": 30}', expected: '30' },
+      { input: '{}', expected: '0' },
+      { input: '{"timeout": 5}', expected: '5' },
+    ],
+    validate: (code) => {
+      const fixed = /\.get\s*\(\s*["']timeout["']\s*,\s*0\s*\)/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 27,
+    title: 'Filter without skipping',
+    problem: 'Return a new list containing only positive values. Do not mutate the list while walking through it.',
+    buggyCode: `def positives(values):
+    for value in values:
+        if value <= 0:
+            values.remove(value)
+    return values`,
+    starterCode: `def positives(values):
+    for value in values:
+        if value <= 0:
+            values.remove(value)
+    return values`,
+    tests: [
+      { input: '[-2, 4, -1, 8]', expected: '[4, 8]' },
+      { input: '[0, 3, 5]', expected: '[3, 5]' },
+      { input: '[-4, -2]', expected: '[]' },
+    ],
+    validate: (code) => {
+      const fixed = /return\s+\[.*for\s+value\s+in\s+values.*if\s+value\s*>\s*0.*\]/s.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 28,
+    title: 'Normalize the trace',
+    problem: 'Trim surrounding whitespace and then lowercase the incoming trace label before returning it.',
+    buggyCode: `def normalize(label):
+    return label.strip.lower()`,
+    starterCode: `def normalize(label):
+    return label.strip.lower()`,
+    tests: [
+      { input: '"  BUG  "', expected: 'bug' },
+      { input: '" Cyan "', expected: 'cyan' },
+      { input: '""', expected: '""' },
+    ],
+    validate: (code) => {
+      const fixed = /strip\s*\(\s*\)\s*\.lower\s*\(\s*\)/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 29,
+    title: 'Catch the expected failure',
+    problem: 'Convert numeric text to an integer and return None when the text is invalid. Catch only the conversion error.',
+    buggyCode: `def parse_count(value):
+    try:
+        return int(value)
+    except:
+        return None`,
+    starterCode: `def parse_count(value):
+    try:
+        return int(value)
+    except:
+        return None`,
+    tests: [
+      { input: '"42"', expected: '42' },
+      { input: '"bad"', expected: 'None' },
+      { input: '"007"', expected: '7' },
+    ],
+    validate: (code) => {
+      const fixed = /except\s+ValueError\s*:/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+  {
+    id: 30,
+    title: 'Calculate a true average',
+    problem: 'Return the arithmetic mean of the values. The empty-list guard must remain safe.',
+    buggyCode: `def average(values):
+    if not values:
+        return 0
+    return sum(values) / len(values) + 1`,
+    starterCode: `def average(values):
+    if not values:
+        return 0
+    return sum(values) / len(values) + 1`,
+    tests: [
+      { input: '[2, 4, 6]', expected: '4' },
+      { input: '[5, 10]', expected: '7.5' },
+      { input: '[]', expected: '0' },
+    ],
+    validate: (code) => {
+      const fixed = /return\s+sum\s*\(\s*values\s*\)\s*\/\s*len\s*\(\s*values\s*\)\s*$/m.test(code) && !/len\s*\(\s*values\s*\)\s*\+\s*1/.test(code);
+      return [fixed, fixed, fixed];
+    },
+  },
+];
+
+const LEVELS: { id: LevelId; name: string; title: string; description: string; time: string; color: string; points: number }[] = [
+  { id: 'easy', name: 'EASY', title: 'Bug Spotter', description: 'Learn the telltale signs. Take your time and build your streak.', time: 'NO TIMER', color: 'lime', points: 10 },
+  { id: 'mid', name: 'MID', title: 'Bug Tracker', description: 'The clock is live. Read fast, think clean, commit with confidence.', time: '45 SEC / Q', color: 'cyan', points: 20 },
+  { id: 'hard', name: 'HARD', title: 'Bug Boss', description: 'Write the fix, run three traces, and defeat the bug yourself.', time: 'CODE LAB', color: 'coral', points: 50 },
 ];
 
 function playTone(kind: 'good' | 'bad' | 'click') {
@@ -107,11 +342,18 @@ function Character({ state = 'idle' }: { state?: AgentState }) {
     <div className="character-wrap" data-testid="character-agent">
       <div className="character">
         <div className="char-glow" />
+        <div className="char-hood-back" />
+        <div className="char-hood-inner" />
         <div className="char-head" />
         <div className="char-hair" />
+        <div className="char-fringe left" />
+        <div className="char-fringe right" />
         <div className="char-eye left" /><div className="char-eye right" />
         <div className="char-neck" /><div className="char-mask" />
         <div className="char-hood" /><div className="char-body" />
+        <div className="char-backpack" />
+        <div className="hood-string left" /><div className="hood-string right" />
+        <div className="tech-patch" />
         <div className="char-arm left" /><div className="char-arm right" />
         <div className="char-hand left" /><div className="char-hand right" />
         <div className="char-leg left" /><div className="char-leg right" />
@@ -202,7 +444,7 @@ function LevelSelect({ navigate, startLevel }: { navigate: (screen: Screen) => v
           <button key={level.id} className={`level-card ${level.color}`} onClick={() => startLevel(level.id)} data-testid={`button-level-${level.id}`}>
             <span className="level-num">0{index + 1} / {level.name}</span>
             <h3>{level.title}</h3><h4>{level.time}</h4><p>{level.description}</p>
-            <div className="level-meta"><span>10 CASE FILES</span><span>{level.id === 'hard' ? '150' : level.id === 'mid' ? '125' : '100'} PTS BASE</span></div>
+            <div className="level-meta"><span>10 CASE FILES</span><span>{level.id === 'hard' ? '3 TESTS / Q' : `${level.points} PTS / Q`}</span></div>
           </button>
         ))}
       </div>
@@ -219,7 +461,7 @@ function CodeBlock({ code, suspicious }: { code: string; suspicious: number }) {
   );
 }
 
-function Game({ level, onComplete, sound }: { level: LevelId; onComplete: (score: number, correct: number, streak: number) => void; sound: boolean }) {
+function Game({ level, onComplete, sound }: { level: 'easy' | 'mid'; onComplete: (score: number, correct: number, streak: number) => void; sound: boolean }) {
   const cases = QUESTIONS[level];
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -317,34 +559,195 @@ function Game({ level, onComplete, sound }: { level: LevelId; onComplete: (score
   );
 }
 
-function Complete({ score, correct, streak, level, navigate, next }: { score: number; correct: number; streak: number; level: LevelId; navigate: (screen: Screen) => void; next: () => void }) {
-  return <main className="screen"><div className="result-card"><div className="eyebrow">[ SECTOR CLEARED / {level.toUpperCase()} ]</div><h2 className="section-head" style={{ justifyContent: 'center', margin: '26px 0 0' }}><span>GOOD HUNT.</span></h2><p style={{ color: 'var(--muted)', margin: '10px 0 0' }}>Ten case files processed. Your scanner is warm.</p><div className="result-score">{score}</div><div className="result-rank">CURRENT SCORE / POINTS</div><div className="result-detail"><span>CASES SOLVED<b>{correct} / 10</b></span><span>BEST STREAK<b>{streak}x</b></span><span>ACCURACY<b>{correct * 10}%</b></span></div><div className="button-row" style={{ justifyContent: 'center' }}><button className="primary-btn" onClick={next} data-testid="button-see-results">View hunt log <Trophy size={16} /></button><button className="secondary-btn" onClick={() => navigate('levels')} data-testid="button-replay-level">Replay a sector</button></div></div></main>;
+function CodeEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const highlight = (line: string) => line.split(/(\b(?:def|return|if|else|for|in|try|except|True|False|None|and|or)\b|#[^]*$|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g).map((token, index) => {
+    const className = /^(def|return|if|else|for|in|try|except|True|False|None|and|or)$/.test(token)
+      ? 'syntax-keyword'
+      : token.startsWith('#')
+        ? 'syntax-comment'
+        : /^["']/.test(token)
+          ? 'syntax-string'
+          : undefined;
+    return <span className={className} key={`${index}-${token}`}>{token}</span>;
+  });
+
+  return (
+    <div className="editor-shell">
+      <div className="editor-gutter" aria-hidden="true">
+        {value.split('\n').map((_, index) => <span key={index}>{String(index + 1).padStart(2, '0')}</span>)}
+      </div>
+      <div className="editor-stage">
+        <pre className="editor-highlight" aria-hidden="true">{value.split('\n').map((line, index) => <span className="editor-highlight-line" key={index}>{highlight(line)}{'\n'}</span>)}</pre>
+        <textarea
+          aria-label="Python code editor"
+          className="editor-input"
+          spellCheck={false}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function HardGame({ onComplete, sound }: { onComplete: (score: number, correct: number, streak: number) => void; sound: boolean }) {
+  const [index, setIndex] = useState(0);
+  const [code, setCode] = useState(HARD_CHALLENGES[0].starterCode);
+  const [results, setResults] = useState<TestResult[] | null>(null);
+  const [solved, setSolved] = useState(false);
+  const [time, setTime] = useState(30);
+  const [score, setScore] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [agentState, setAgentState] = useState<AgentState>('thinking');
+  const challenge = HARD_CHALLENGES[index];
+
+  useEffect(() => {
+    setCode(challenge.starterCode);
+    setResults(null);
+    setSolved(false);
+    setTime(30);
+    setAgentState('thinking');
+  }, [challenge]);
+
+  useEffect(() => {
+    if (solved) return;
+    const ticker = window.setInterval(() => {
+      setTime((value) => {
+        if (value <= 1) {
+          window.clearInterval(ticker);
+          setAgentState('warning');
+          if (sound) playTone('bad');
+          return 0;
+        }
+        if (value <= 6) setAgentState('warning');
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(ticker);
+  }, [index, solved, sound]);
+
+  const runTests = () => {
+    const nextResults = challenge.validate(code).map((passed) => ({ passed }));
+    setResults(nextResults);
+    setAgentState(nextResults.every((result) => result.passed) ? 'inspecting' : 'wrong');
+    if (sound) playTone('click');
+    return nextResults;
+  };
+
+  const submitCode = () => {
+    const nextResults = runTests();
+    if (!nextResults.every((result) => result.passed)) return;
+    setSolved(true);
+    setScore((value) => value + 50);
+    setCorrect((value) => value + 1);
+    setStreak((value) => {
+      const next = value + 1;
+      setBestStreak((best) => Math.max(best, next));
+      return next;
+    });
+    setAgentState('correct');
+    if (sound) playTone('good');
+  };
+
+  const next = () => {
+    if (!solved) return;
+    if (index === HARD_CHALLENGES.length - 1) onComplete(score, correct, bestStreak);
+    else setIndex((value) => value + 1);
+  };
+
+  return (
+    <main className="screen game-screen hard-screen">
+      <div className="game-top">
+        <div className="progress-wrap"><div className="progress-row"><span>BUG BOSS // CASE {String(index + 1).padStart(2, '0')} / 10</span><span>CODE-WRITE PROTOCOL</span></div><div className="progress-bar"><div className="progress-fill hard-fill" style={{ width: `${((index + (solved ? 1 : 0)) / HARD_CHALLENGES.length) * 100}%` }} /></div></div>
+        <div className="hud"><div className="hud-box"><label>SCORE</label><strong data-testid="text-score">{score}</strong></div><div className={`hud-box ${time <= 6 ? 'warning' : ''}`}><label>TIME</label><strong data-testid="text-timer">{time}s</strong></div><div className="hud-box"><label>STREAK</label><strong data-testid="text-streak">{streak}x</strong></div></div>
+      </div>
+      <div className="boss-layout">
+        <section className="boss-brief">
+          <div className="question-label"><Code2 size={15} /> <span>BUG BOSS // {String(challenge.id).padStart(2, '0')}</span></div>
+          <h2>{challenge.title}</h2>
+          <div className="brief-block"><span className="brief-label">PROBLEM</span><p>{challenge.problem}</p></div>
+          <div className="brief-block"><span className="brief-label">BUGGY CODE</span><div className="code-window"><div className="code-title"><span className="code-dots"><i /><i /><i /></span><span>case_file.py</span><span>READ ONLY</span></div><pre>{challenge.buggyCode}</pre></div></div>
+          <div className="brief-block"><span className="brief-label">TEST CASES // 03 REQUIRED</span><div className="test-list">{challenge.tests.map((test, testIndex) => <div className="test-card" key={test.input}><strong>TEST {testIndex + 1}</strong><span>INPUT <b>{test.input}</b></span><span>EXPECTED <b>{test.expected}</b></span></div>)}</div></div>
+        </section>
+        <section className="boss-editor-panel">
+          <div className="editor-heading"><div><span className="brief-label">CODE EDITOR</span><h3>Patch the trace.</h3></div><span className="python-badge">PYTHON 3</span></div>
+          <CodeEditor value={code} onChange={setCode} />
+          <div className="editor-actions"><button className="secondary-btn" onClick={runTests} data-testid="button-run-code"><Play size={15} /> Run code</button><button className="primary-btn" onClick={submitCode} disabled={solved} data-testid="button-submit-code"><Send size={15} /> Submit code</button></div>
+          <div className={`test-results ${results ? 'visible' : ''}`}>
+            <div className="results-heading"><span>RESULTS</span>{results?.every((result) => result.passed) ? <strong className="pass-text"><Check size={14} /> ALL TRACES CLEAR</strong> : results ? <strong className="fail-text"><CircleAlert size={14} /> BUG STILL ACTIVE</strong> : <strong>WAITING FOR RUN</strong>}</div>
+            {results ? <div className="result-tests">{results.map((result, resultIndex) => <div className={result.passed ? 'test-result pass' : 'test-result fail'} key={resultIndex}><span>TEST {resultIndex + 1}</span><b>{result.passed ? 'PASS' : 'FAIL'}</b></div>)}</div> : <p className="results-empty">Run the patched code to inspect all three traces.</p>}
+            {solved && <div className="success-callout"><strong>BUG DEFEATED!</strong><span>All three traces pass. +50 points secured.</span></div>}
+            {results && !results.every((result) => result.passed) && <p className="results-empty fail-copy">Edit the patch and run the traces again. The solution stays hidden until the bug is defeated.</p>}
+          </div>
+          <div className="next-row"><button className="primary-btn" onClick={next} disabled={!solved} data-testid="button-next-case">{index === HARD_CHALLENGES.length - 1 ? 'Open hunter report' : 'Next boss case'} <ArrowRight size={16} /></button></div>
+        </section>
+      </div>
+      <aside className="agent-panel boss-agent-panel"><Character state={agentState} /><div className="agent-state"><strong>{agentState === 'warning' ? 'BUG IS ESCAPING' : agentState === 'correct' ? 'NICE PATCH' : agentState === 'wrong' ? 'LOOK AGAIN' : agentState === 'inspecting' ? 'TRACE RUNNING' : 'CODE HUNTER'}</strong><p>{agentState === 'warning' ? 'The bug is escaping!' : agentState === 'correct' ? 'System cleared. Keep moving.' : agentState === 'wrong' ? 'One or more traces still fail.' : agentState === 'inspecting' ? 'There is a bug hiding in this line.' : 'Write the fix, then run every trace.'}</p></div></aside>
+    </main>
+  );
+}
+
+function Complete({ score, correct, streak, level, next, nextLabel }: { score: number; correct: number; streak: number; level: LevelId; next: () => void; nextLabel: string }) {
+  return <main className="screen"><div className="result-card"><div className="eyebrow">[ SECTOR CLEARED / {level.toUpperCase()} ]</div><h2 className="section-head" style={{ justifyContent: 'center', margin: '26px 0 0' }}><span>GOOD HUNT.</span></h2><p style={{ color: 'var(--muted)', margin: '10px 0 0' }}>Ten case files processed. Your scanner is warm.</p><div className="result-score">{score}</div><div className="result-rank">SECTOR SCORE / POINTS</div><div className="result-detail"><span>CASES SOLVED<b>{correct} / 10</b></span><span>BEST STREAK<b>{streak}x</b></span><span>ACCURACY<b>{correct * 10}%</b></span></div><div className="button-row" style={{ justifyContent: 'center' }}><button className="primary-btn" onClick={next} data-testid="button-continue-level">{nextLabel} <ArrowRight size={16} /></button></div></div></main>;
 }
 
 function Results({ score, correct, streak, navigate, reset }: { score: number; correct: number; streak: number; navigate: (screen: Screen) => void; reset: () => void }) {
-  const rank = correct === 10 ? 'ELITE CODE HUNTER' : correct >= 7 ? 'FIELD OPERATIVE' : correct >= 4 ? 'TRACE INITIATE' : 'ROOKIE SCANNER';
-  return <main className="screen"><div className="result-card"><div className="eyebrow">[ FINAL HUNT LOG / 030 ]</div><h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', lineHeight: '.9', letterSpacing: '-.07em', margin: '22px 0 0' }}>TRACE<br /><span style={{ color: 'var(--cyan)' }}>COMPLETE.</span></h2><div className="result-score">{score}</div><div className="result-rank">{rank}</div><div className="result-detail"><span>CASES SOLVED<b>{correct} / 10</b></span><span>BEST STREAK<b>{streak}x</b></span><span>ACCURACY<b>{correct * 10}%</b></span></div><div className="button-row" style={{ justifyContent: 'center' }}><button className="primary-btn" onClick={() => navigate('levels')} data-testid="button-new-hunt">New hunt <RotateCcw size={16} /></button><button className="secondary-btn" onClick={reset} data-testid="button-return-home">Return to base</button></div></div></main>;
+  const rank = correct === 30 ? 'ELITE CODE HUNTER' : correct >= 21 ? 'FIELD OPERATIVE' : correct >= 12 ? 'TRACE INITIATE' : 'ROOKIE SCANNER';
+  return <main className="screen"><div className="result-card"><div className="eyebrow">[ FINAL HUNT LOG / 030 ]</div><h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', lineHeight: '.9', letterSpacing: '-.07em', margin: '22px 0 0' }}>TRACE<br /><span style={{ color: 'var(--cyan)' }}>COMPLETE.</span></h2><div className="result-score">{score}</div><div className="result-rank">{rank}</div><div className="result-detail"><span>CASES SOLVED<b>{correct} / 30</b></span><span>BEST STREAK<b>{streak}x</b></span><span>ACCURACY<b>{Math.round((correct / 30) * 100)}%</b></span></div><div className="button-row" style={{ justifyContent: 'center' }}><button className="primary-btn" onClick={() => navigate('levels')} data-testid="button-new-hunt">New hunt <RotateCcw size={16} /></button><button className="secondary-btn" onClick={reset} data-testid="button-return-home">Return to base</button></div></div></main>;
 }
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [level, setLevel] = useState<LevelId>('easy');
   const [sound, setSound] = useState(true);
-  const [score, setScore] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [streak, setStreak] = useState(0);
+  const [totalScore, setTotalScore] = useState(0);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [levelScore, setLevelScore] = useState(0);
+  const [levelCorrect, setLevelCorrect] = useState(0);
+  const [levelStreak, setLevelStreak] = useState(0);
   const navigate = (nextScreen: Screen) => { setScreen(nextScreen); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const startLevel = (id: LevelId) => { setLevel(id); setScore(0); setCorrect(0); setStreak(0); navigate('game'); };
+  const startLevel = (id: LevelId, resetSession = true) => {
+    setLevel(id);
+    setLevelScore(0);
+    setLevelCorrect(0);
+    setLevelStreak(0);
+    if (resetSession) {
+      setTotalScore(0);
+      setTotalCorrect(0);
+      setBestStreak(0);
+    }
+    navigate('game');
+  };
   const goHome = () => navigate('home');
-  const nextAfterComplete = () => navigate('result');
+  const nextAfterComplete = () => {
+    if (level === 'easy') startLevel('mid', false);
+    else if (level === 'mid') startLevel('hard', false);
+    else navigate('result');
+  };
+  const finishLevel = (finalScore: number, finalCorrect: number, finalStreak: number) => {
+    setLevelScore(finalScore);
+    setLevelCorrect(finalCorrect);
+    setLevelStreak(finalStreak);
+    setTotalScore((value) => value + finalScore);
+    setTotalCorrect((value) => value + finalCorrect);
+    setBestStreak((value) => Math.max(value, finalStreak));
+    navigate(level === 'hard' ? 'result' : 'complete');
+  };
   const activeScreen = useMemo(() => {
     if (screen === 'home') return <Home navigate={navigate} />;
     if (screen === 'how') return <HowToPlay navigate={navigate} />;
     if (screen === 'levels') return <LevelSelect navigate={navigate} startLevel={startLevel} />;
-    if (screen === 'game') return <Game level={level} sound={sound} onComplete={(finalScore, finalCorrect, bestStreak) => { setScore(finalScore); setCorrect(finalCorrect); setStreak(bestStreak); navigate('complete'); }} />;
-    if (screen === 'complete') return <Complete score={score} correct={correct} streak={streak} level={level} navigate={navigate} next={nextAfterComplete} />;
-    return <Results score={score} correct={correct} streak={streak} navigate={navigate} reset={goHome} />;
-  }, [screen, level, sound, score, correct, streak]);
+    if (screen === 'game') {
+      return level === 'hard'
+        ? <HardGame sound={sound} onComplete={finishLevel} />
+        : <Game level={level} sound={sound} onComplete={finishLevel} />;
+    }
+    if (screen === 'complete') return <Complete score={levelScore} correct={levelCorrect} streak={levelStreak} level={level} next={nextAfterComplete} nextLabel={level === 'easy' ? 'Continue to mid' : 'Continue to bug boss'} />;
+    return <Results score={totalScore} correct={totalCorrect} streak={bestStreak} navigate={navigate} reset={goHome} />;
+  }, [screen, level, sound, levelScore, levelCorrect, levelStreak, totalScore, totalCorrect, bestStreak]);
   return <div className="app-shell"><Topbar sound={sound} setSound={setSound} goHome={goHome} />{activeScreen}</div>;
 }
 
